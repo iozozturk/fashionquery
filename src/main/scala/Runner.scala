@@ -1,7 +1,8 @@
 import java.net.InetAddress
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.event.Logging
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import com.typesafe.config.ConfigFactory
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.TransportAddress
@@ -9,13 +10,24 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient
 
 
 object Runner extends App {
-  implicit val actorSystem: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  val config = ConfigFactory.load
-  private val esHost = config.getString("elasticsearch.host")
+  implicit val system: ActorSystem = ActorSystem()
+  val logger = Logging(system.eventStream, "fashion-query")
 
+  val decider: Supervision.Decider = { e =>
+    logger.error(s"Unhandled exception in stream: ${e.getMessage}", e)
+    e.printStackTrace()
+    Supervision.Stop
+  }
+  val materializerSettings = ActorMaterializerSettings(system).withSupervisionStrategy(decider)
+  implicit val materializer: ActorMaterializer = ActorMaterializer(materializerSettings)
+
+  val config = ConfigFactory.load
+  val pipelineConfig = PipelineConfig(config, system)
+
+  private val esHost = config.getString("elasticsearch.host")
   val esClient = new PreBuiltTransportClient(Settings.EMPTY)
     .addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), 9300))
 
-  new Pipeline(config, esClient).init()
+  new DressPipeline(pipelineConfig, esClient).init()
+  new RatingPipeline(pipelineConfig, esClient).init()
 }
