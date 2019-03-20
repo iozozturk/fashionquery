@@ -2,12 +2,14 @@ import java.net.InetAddress
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
+import akka.stream.ActorMaterializer
+import akka.stream.ActorMaterializerSettings
+import akka.stream.Supervision
 import com.typesafe.config.ConfigFactory
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.transport.client.PreBuiltTransportClient
-
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Runner extends App {
   implicit val system: ActorSystem = ActorSystem()
@@ -30,4 +32,5 @@ object Runner extends App {
 
   new DressPipeline(pipelineConfig, esClient).init()
   new RatingPipeline(pipelineConfig, esClient).init()
+  new Api().init()
 }
