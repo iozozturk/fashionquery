@@ -11,7 +11,7 @@ import akka.{Done, NotUsed}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.{JsObject, Json}
 
-class DressPipeline(config: PipelineConfig, indexService: SearchService)(
+class DressPipeline(config: PipelineConfig, searchService: SearchService)(
   implicit val system: ActorSystem,
   materializer: Materializer
 ) {
@@ -30,7 +30,7 @@ class DressPipeline(config: PipelineConfig, indexService: SearchService)(
       .run()
   }
 
-  private[query] def logMessage = Flow[ConsumerRecord[String, String]].map { record =>
+  private def logMessage = Flow[ConsumerRecord[String, String]].map { record =>
     logger.info(s"incoming dress message ${record.key()}")
     record
   }
@@ -40,12 +40,12 @@ class DressPipeline(config: PipelineConfig, indexService: SearchService)(
     result
   }
 
-  def indexOrUpdate: Flow[ConsumerRecord[String, String], IndexResult, NotUsed] =
+  private[query] def indexOrUpdate: Flow[ConsumerRecord[String, String], IndexResult, NotUsed] =
     Flow[ConsumerRecord[String, String]].map { record =>
       val jsonRecord = Json.parse(record.value())
       val id = (jsonRecord \ "payload_key").as[String]
       val payload = (jsonRecord \ "payload").as[JsObject]
 
-      indexService.upsert(payload.toString(), id)
+      searchService.upsert(payload.toString(), id)
     }
 }
