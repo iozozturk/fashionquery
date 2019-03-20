@@ -13,7 +13,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object Runner extends App {
+object Application extends App {
   implicit val system: ActorSystem = ActorSystem()
   val logger = Logging(system.eventStream, "fashion-query")
 
