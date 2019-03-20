@@ -16,10 +16,11 @@ class Api(queryService: DressService)(
 ) extends PlayJsonSupport {
   val logger = Logging(system.eventStream, "dress-api")
 
-  def init(): Future[Unit] = {
+  def init(): Future[Http.ServerBinding] = {
     val (host, port) = ("localhost", 8080)
     Http().bindAndHandle(route, host, port).map { binding =>
       logger.info(s"Dress api is listening on $host:$port")
+      binding
     }
   }
 

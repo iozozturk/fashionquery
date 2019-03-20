@@ -1,17 +1,16 @@
 import java.net.InetAddress
 
-import akka.actor.ActorSystem
+import akka.Done
+import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.Logging
-import akka.kafka.scaladsl.Consumer
-import akka.stream.ActorMaterializer
-import akka.stream.ActorMaterializerSettings
-import akka.stream.Supervision
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import com.typesafe.config.ConfigFactory
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.transport.client.PreBuiltTransportClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationDouble
 
 object Application extends App {
   implicit val system: ActorSystem = ActorSystem()
@@ -36,13 +35,16 @@ object Application extends App {
   private val dressService = new DressService(indexService)
 
   private val dressControl = new DressPipeline(pipelineConfig, indexService).init()
-  private val ratingControl: Consumer.Control = new RatingPipeline(pipelineConfig, indexService).init()
-  new Api(dressService).init()
+  private val ratingControl = new RatingPipeline(pipelineConfig, indexService).init()
+  private val eventualBinding = new Api(dressService).init()
 
-  scala.sys.addShutdownHook(() => {
+  CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceUnbind, "service_shutdown") { () =>
     logger.info("shutting down gracefully, terminating connections")
-    esClient.close()
-    dressControl.shutdown()
-    ratingControl.shutdown()
-  })
+    eventualBinding.flatMap(_.terminate(hardDeadline = 30.second)).map { _ =>
+      dressControl.shutdown()
+      ratingControl.shutdown()
+      esClient.close()
+      Done
+    }
+  }
 }
