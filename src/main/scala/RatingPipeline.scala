@@ -9,7 +9,7 @@ import akka.stream.scaladsl.Sink
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.Json
 
-class RatingPipeline(config: PipelineConfig, indexService: IndexService)(
+class RatingPipeline(config: PipelineConfig, indexService: SearchService)(
   implicit val system: ActorSystem,
   materializer: Materializer
 ) {

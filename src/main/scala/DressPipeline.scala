@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Flow, Sink}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.{JsObject, Json}
 
-class DressPipeline(config: PipelineConfig, indexService: IndexService)(
+class DressPipeline(config: PipelineConfig, indexService: SearchService)(
   implicit val system: ActorSystem,
   materializer: Materializer
 ) {

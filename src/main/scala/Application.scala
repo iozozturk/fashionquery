@@ -31,7 +31,7 @@ object Application extends App {
   val esClient = new PreBuiltTransportClient(Settings.EMPTY)
     .addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), 9300))
 
-  private val indexService = new IndexService(esClient)
+  private val indexService = new SearchService(esClient)
   private val dressService = new DressService(indexService)
 
   private val dressControl = new DressPipeline(pipelineConfig, indexService).init()

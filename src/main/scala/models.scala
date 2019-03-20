@@ -58,7 +58,7 @@ object Brand {
   )
 
   implicit val brandReads: Reads[Brand] = (
-    (JsPath \ "logo_url").read[String] and
+    (JsPath \ "logo_url").readWithDefault[String]("") and
       (JsPath \ "name").read[String]
   )(Brand.apply(_, _))
 }
