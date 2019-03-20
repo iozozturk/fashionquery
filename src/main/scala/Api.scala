@@ -9,7 +9,7 @@ import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Api(queryService: QueryService)(
+class Api(queryService: DressService)(
   implicit val system: ActorSystem,
   val materializer: Materializer,
   val executionContext: ExecutionContext

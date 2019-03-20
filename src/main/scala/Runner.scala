@@ -2,6 +2,7 @@ import java.net.InetAddress
 
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.kafka.scaladsl.Consumer
 import akka.stream.ActorMaterializer
 import akka.stream.ActorMaterializerSettings
 import akka.stream.Supervision
@@ -9,6 +10,7 @@ import com.typesafe.config.ConfigFactory
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.transport.client.PreBuiltTransportClient
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Runner extends App {
@@ -30,7 +32,17 @@ object Runner extends App {
   val esClient = new PreBuiltTransportClient(Settings.EMPTY)
     .addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), 9300))
 
-  new DressPipeline(pipelineConfig, esClient).init()
-  new RatingPipeline(pipelineConfig, esClient).init()
-  new Api(new QueryService(esClient)).init()
+  private val indexService = new IndexService(esClient)
+  private val dressService = new DressService(indexService)
+
+  private val dressControl = new DressPipeline(pipelineConfig, indexService).init()
+  private val ratingControl: Consumer.Control = new RatingPipeline(pipelineConfig, indexService).init()
+  new Api(dressService).init()
+
+  scala.sys.addShutdownHook(() => {
+    logger.info("shutting down gracefully, terminating connections")
+    esClient.close()
+    dressControl.shutdown()
+    ratingControl.shutdown()
+  })
 }

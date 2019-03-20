@@ -1,3 +1,4 @@
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.kafka.Subscriptions
@@ -6,15 +7,9 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.elasticsearch.action.update.UpdateResponse
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.unit.TimeValue
-import org.elasticsearch.common.xcontent.XContentType
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
-class RatingPipeline(config: PipelineConfig, esClient: TransportClient)(
+class RatingPipeline(config: PipelineConfig, indexService: IndexService)(
   implicit val system: ActorSystem,
   materializer: Materializer
 ) {
@@ -33,40 +28,47 @@ class RatingPipeline(config: PipelineConfig, esClient: TransportClient)(
   }
 
   private def logMessage = Flow[ConsumerRecord[String, String]].map { record =>
-    logger.info(record.value())
+    logger.info(s"incoming rating message ${record.key()}")
     record
   }
 
-  private def logIndexResponse = Flow[UpdateResponse].map { response =>
-    logger.info(response.toString)
-    response
+  private def logIndexResponse = Flow[IndexUpdateResult].map { result =>
+    logger.info(s"dress updated, success=${result.isSucess} id=${result.docId}")
+    result
   }
 
-  def updateDress = Flow[ConsumerRecord[String, String]].map { record =>
-    val timeout = TimeValue.timeValueSeconds(60)
-    val jsonRecord = Json.parse(record.value())
-    val dressId = (jsonRecord \ "payload" \ "dress_id").as[String]
-    val stars = (jsonRecord \ "payload" \ "stars").as[Int]
+  def updateDress: Flow[ConsumerRecord[String, String], IndexUpdateResult, NotUsed] =
+    Flow[ConsumerRecord[String, String]].map { record =>
+      val jsonRecord = Json.parse(record.value())
+      val dressId = (jsonRecord \ "payload" \ "dress_id").as[String]
+      val stars = (jsonRecord \ "payload" \ "stars").as[Int]
 
-    val response = esClient
-      .prepareGet("fashion-dress", "_doc", dressId)
-      .get(timeout)
+      val getResult = indexService.getDocument(dressId)
 
-    val starsCount = (Json.parse(response.getSourceAsString) \ "stars-count").getOrElse(JsNumber(0)).as[Int]
-    val starsMean = (Json.parse(response.getSourceAsString) \ "stars-mean").getOrElse(JsNumber(0.0)).as[Double]
+      if (getResult.exists) {
+        val dress = Json.parse(getResult.document).as[Dress]
+        val updatedDress = updateDressRating(dress, stars)
 
-    val updatedDress = Json.parse(response.getSourceAsString).as[JsObject] ++ Json
-      .obj("stars-count" -> (starsCount + 1), "stars-mean" -> calculateMean(starsMean, starsCount, stars))
+        val indexResult = indexService.index(Json.toJson(updatedDress).toString(), dressId)
+        if (indexResult.isSuccess) {
+          IndexUpdateResult(isSucess = true, dressId)
+        } else {
+          logger.warning(s"indexing failure, dressId=$dressId")
+          IndexUpdateResult(isSucess = false, dressId)
+        }
+      } else {
+        logger.warning(s"missing document in index, dressId=$dressId")
+        IndexUpdateResult(isSucess = false, dressId)
+      }
+    }
 
-    val updateResponse = esClient
-      .prepareUpdate("fashion-dress", "_doc", dressId)
-      .setDoc(updatedDress.toString(), XContentType.JSON)
-      .get(timeout)
-
-    updateResponse
-  }
+  private def updateDressRating(dress: Dress, stars: Int) =
+    dress
+      .copy(starsCount = dress.starsCount + 1, starsMean = calculateMean(dress.starsMean, dress.starsCount, stars))
 
   private def calculateMean(existingMean: Double, starsCount: Int, newRating: Int) =
     ((existingMean * starsCount) + newRating) / (starsCount + 1)
 
 }
+
+case class IndexUpdateResult(isSucess: Boolean, docId: String)
