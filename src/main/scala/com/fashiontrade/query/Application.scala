@@ -1,3 +1,4 @@
+package com.fashiontrade.query
 import java.net.InetAddress
 
 import akka.actor.{ActorSystem, CoordinatedShutdown}

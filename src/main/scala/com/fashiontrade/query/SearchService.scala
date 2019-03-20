@@ -1,3 +1,5 @@
+package com.fashiontrade.query
+
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.xcontent.XContentType

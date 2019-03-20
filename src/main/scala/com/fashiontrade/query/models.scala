@@ -1,8 +1,7 @@
-import play.api.libs.json.JsPath
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
+package com.fashiontrade.query
+
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
+import play.api.libs.json.{JsPath, Json, Reads, Writes}
 
 case class Dress(
   id: String,

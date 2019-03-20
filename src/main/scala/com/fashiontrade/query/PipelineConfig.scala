@@ -1,3 +1,5 @@
+package com.fashiontrade.query
+
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerSettings
 import com.typesafe.config.Config

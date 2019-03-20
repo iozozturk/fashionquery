@@ -1,3 +1,5 @@
+package com.fashiontrade.query
+
 import org.elasticsearch.common.unit.TimeValue
 import play.api.libs.json.Json
 

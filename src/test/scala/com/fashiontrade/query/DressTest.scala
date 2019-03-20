@@ -1,5 +1,6 @@
-import org.scalatest.Matchers
-import org.scalatest.WordSpec
+package com.fashiontrade.query
+
+import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.Json
 
 class DressTest extends WordSpec with Matchers {

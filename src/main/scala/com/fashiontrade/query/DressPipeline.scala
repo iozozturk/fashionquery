@@ -1,4 +1,5 @@
-import akka.{Done, NotUsed}
+package com.fashiontrade.query
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.kafka.Subscriptions
@@ -6,6 +7,7 @@ import akka.kafka.scaladsl.Consumer
 import akka.kafka.scaladsl.Consumer.DrainingControl
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink}
+import akka.{Done, NotUsed}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.{JsObject, Json}
 
@@ -28,7 +30,7 @@ class DressPipeline(config: PipelineConfig, indexService: SearchService)(
       .run()
   }
 
-  private def logMessage = Flow[ConsumerRecord[String, String]].map { record =>
+  private[query] def logMessage = Flow[ConsumerRecord[String, String]].map { record =>
     logger.info(s"incoming dress message ${record.key()}")
     record
   }
