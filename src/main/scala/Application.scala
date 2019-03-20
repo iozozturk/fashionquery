@@ -1,6 +1,5 @@
 import java.net.InetAddress
 
-import akka.Done
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.Logging
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
@@ -40,11 +39,10 @@ object Application extends App {
 
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceUnbind, "service_shutdown") { () =>
     logger.info("shutting down gracefully, terminating connections")
-    eventualBinding.flatMap(_.terminate(hardDeadline = 30.second)).map { _ =>
-      dressControl.shutdown()
-      ratingControl.shutdown()
+    eventualBinding.flatMap(_.terminate(hardDeadline = 30.second)).flatMap { _ =>
       esClient.close()
-      Done
+      dressControl.drainAndShutdown()
+      ratingControl.drainAndShutdown()
     }
   }
 }

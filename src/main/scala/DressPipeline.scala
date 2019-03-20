@@ -1,10 +1,11 @@
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
+import akka.kafka.scaladsl.Consumer.DrainingControl
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.scaladsl.{Flow, Keep, Sink}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.{JsObject, Json}
 
@@ -14,7 +15,7 @@ class DressPipeline(config: PipelineConfig, indexService: SearchService)(
 ) {
   val logger = Logging(system.eventStream, "dress-pipeline")
 
-  def init(): Consumer.Control = {
+  def init(): DrainingControl[Done] = {
     val subscription = Subscriptions.topics("dresses")
 
     Consumer
@@ -22,7 +23,8 @@ class DressPipeline(config: PipelineConfig, indexService: SearchService)(
       .via(logMessage)
       .via(indexOrUpdate)
       .via(logIndexResponse)
-      .to(Sink.ignore)
+      .toMat(Sink.ignore)(Keep.both)
+      .mapMaterializedValue(DrainingControl.apply)
       .run()
   }
 
