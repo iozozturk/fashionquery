@@ -43,7 +43,7 @@ class RatingPipeline(config: PipelineConfig, esClient: TransportClient)(
   }
 
   def updateDress = Flow[ConsumerRecord[String, String]].map { record =>
-    val timeout = TimeValue.timeValueSeconds(3)
+    val timeout = TimeValue.timeValueSeconds(60)
     val jsonRecord = Json.parse(record.value())
     val dressId = (jsonRecord \ "payload" \ "dress_id").as[String]
     val stars = (jsonRecord \ "payload" \ "stars").as[Int]

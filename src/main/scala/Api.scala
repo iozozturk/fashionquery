@@ -5,10 +5,15 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.stream.Materializer
+import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Api(implicit val system: ActorSystem, val materializer: Materializer, val executionContext: ExecutionContext) {
+class Api(queryService: QueryService)(
+  implicit val system: ActorSystem,
+  val materializer: Materializer,
+  val executionContext: ExecutionContext
+) extends PlayJsonSupport {
   val logger = Logging(system.eventStream, "dress-api")
 
   def init(): Future[Unit] = {
@@ -20,7 +25,11 @@ class Api(implicit val system: ActorSystem, val materializer: Materializer, val 
 
   private val route = get {
     path("search") {
-      complete(OK)
+      parameters('query, 'brand.?) { (query, brand) =>
+        logger.info(s"new search for query=$query brand=$brand")
+        val queryHits = queryService.search(query, brand)
+        complete(OK, queryHits)
+      }
     }
   }
 }

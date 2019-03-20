@@ -32,5 +32,5 @@ object Runner extends App {
 
   new DressPipeline(pipelineConfig, esClient).init()
   new RatingPipeline(pipelineConfig, esClient).init()
-  new Api().init()
+  new Api(new QueryService(esClient)).init()
 }

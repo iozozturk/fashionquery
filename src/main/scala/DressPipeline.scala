@@ -4,20 +4,30 @@ import akka.event.Logging
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink}
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Sink
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.elasticsearch.action.update.UpdateResponse
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.xcontent.XContentType
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
-class DressPipeline(config: PipelineConfig, esClient: TransportClient)(implicit val system: ActorSystem, materializer: Materializer) {
+object DressPipeline{
+  val indexName = "fashion-dress"
+}
+
+class DressPipeline(config: PipelineConfig, esClient: TransportClient)(
+  implicit val system: ActorSystem,
+  materializer: Materializer
+) {
   val logger = Logging(system.eventStream, "dress-pipeline")
 
   def init(): Consumer.Control = {
     val subscription = Subscriptions.topics("dresses")
 
-    Consumer.plainSource(config.consumerSettings, subscription)
+    Consumer
+      .plainSource(config.consumerSettings, subscription)
       .via(logMessage)
       .via(indexOrUpdate)
       .via(logIndexResponse)
@@ -35,16 +45,17 @@ class DressPipeline(config: PipelineConfig, esClient: TransportClient)(implicit 
     response
   }
 
-  def indexOrUpdate: Flow[ConsumerRecord[String, String], UpdateResponse, NotUsed] = Flow[ConsumerRecord[String, String]].map { record =>
-    val jsonRecord = Json.parse(record.value())
-    val id = (jsonRecord \ "payload_key").as[String]
-    val payload = (jsonRecord \ "payload").as[JsObject]
+  def indexOrUpdate: Flow[ConsumerRecord[String, String], UpdateResponse, NotUsed] =
+    Flow[ConsumerRecord[String, String]].map { record =>
+      val jsonRecord = Json.parse(record.value())
+      val id = (jsonRecord \ "payload_key").as[String]
+      val payload = (jsonRecord \ "payload").as[JsObject]
 
-    esClient.prepareUpdate("fashion-dress", "_doc", id)
-      .setDoc(payload.toString(), XContentType.JSON)
-      .setDocAsUpsert(true)
-      .get()
-  }
-
-
+      esClient
+        .prepareUpdate(DressPipeline.indexName, "_doc", id)
+        .setDoc(payload.toString(), XContentType.JSON)
+        .setDocAsUpsert(true)
+        .get()
+    }
 }
+
