@@ -12,5 +12,6 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.elasticsearch.client" % "transport" % "6.6.2",
   "com.typesafe.play" %% "play-json" % "2.7.2",
-  "de.heikoseeberger" %% "akka-http-play-json" % "1.25.2"
+  "de.heikoseeberger" %% "akka-http-play-json" % "1.25.2",
+  "org.scalatest" %% "scalatest" % "3.0.6" % Test
 )
