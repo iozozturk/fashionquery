@@ -3,14 +3,11 @@ package com.fashiontrade.query
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Keep
-import akka.stream.testkit.scaladsl.TestSink
-import akka.stream.testkit.scaladsl.TestSource
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.mockito.Mockito.when
-import org.scalatest.Matchers
-import org.scalatest.WordSpecLike
+import org.scalatest.{Matchers, WordSpecLike}
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
 class RatingPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
@@ -52,6 +49,65 @@ class RatingPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
       sub.request(1)
       pub.sendNext(new ConsumerRecord("dresses", 1, 1, "ratingId", payload))
       sub.expectNext(IndexUpdateResult(isSuccess = true, dressId))
+    }
+
+    "reply with unsuccessful when document does not exist" in {
+      val dressId = "dressId"
+      val payload =
+        s"""
+           |{
+           | "payload_key":"ratingId",
+           | "payload":{
+           |    "dress_id": "$dressId",
+           |    "stars": 1
+           | }
+           |}
+        """.stripMargin
+      val getResult = GetResult(exists = false, "{}", dressId)
+      when(searchService.getDocument(dressId)) thenReturn getResult
+
+      val flowUnderTest = pipelineInTest.updateDress
+
+      val (pub, sub) = TestSource
+        .probe[ConsumerRecord[String, String]]
+        .via(flowUnderTest)
+        .toMat(TestSink.probe[IndexUpdateResult])(Keep.both)
+        .run()
+
+      sub.request(1)
+      pub.sendNext(new ConsumerRecord("dresses", 1, 1, "ratingId", payload))
+      sub.expectNext(IndexUpdateResult(isSuccess = false, dressId))
+    }
+
+    "reply with unsuccessful when document could not be indexed" in {
+      val dressId = "dressId"
+      val payload =
+        s"""
+           |{
+           | "payload_key":"ratingId",
+           | "payload":{
+           |    "dress_id": "$dressId",
+           |    "stars": 1
+           | }
+           |}
+        """.stripMargin
+      val getResult = GetResult(exists = true, fixture.dressJson, dressId)
+      when(searchService.getDocument(dressId)) thenReturn getResult
+
+      val indexResult = IndexResult(isSuccess = false, dressId)
+      when(searchService.index(Json.parse(fixture.updatedDressWithStars).toString(), dressId)) thenReturn indexResult
+
+      val flowUnderTest = pipelineInTest.updateDress
+
+      val (pub, sub) = TestSource
+        .probe[ConsumerRecord[String, String]]
+        .via(flowUnderTest)
+        .toMat(TestSink.probe[IndexUpdateResult])(Keep.both)
+        .run()
+
+      sub.request(1)
+      pub.sendNext(new ConsumerRecord("dresses", 1, 1, "ratingId", payload))
+      sub.expectNext(IndexUpdateResult(isSuccess = false, dressId))
     }
 
   }
