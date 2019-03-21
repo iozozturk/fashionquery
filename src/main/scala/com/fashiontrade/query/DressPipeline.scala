@@ -1,5 +1,6 @@
 package com.fashiontrade.query
 
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.kafka.Subscriptions
@@ -7,9 +8,8 @@ import akka.kafka.scaladsl.Consumer
 import akka.kafka.scaladsl.Consumer.DrainingControl
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink}
-import akka.{Done, NotUsed}
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 
 class DressPipeline(config: PipelineConfig, searchService: SearchService)(
   implicit val system: ActorSystem,
@@ -44,8 +44,9 @@ class DressPipeline(config: PipelineConfig, searchService: SearchService)(
     Flow[ConsumerRecord[String, String]].map { record =>
       val jsonRecord = Json.parse(record.value())
       val id = (jsonRecord \ "payload_key").as[String]
-      val payload = (jsonRecord \ "payload").as[JsObject]
+      val payload = (jsonRecord \ "payload").as[Dress]
 
-      searchService.upsert(payload.toString(), id)
+      searchService.upsert(Json.toJson(payload).toString(), id)
     }
+
 }

@@ -41,8 +41,8 @@ object Dress {
       (JsPath \ "season").read[String] and
       (JsPath \ "price").read[Double] and
       (JsPath \ "brand").read[Brand] and
-      (JsPath \ "stars_count").readWithDefault[Int](0) and
-      (JsPath \ "stars_mean").readWithDefault[Double](0.0)
+      (JsPath \ "stars_count").readWithDefault[Int](1) and
+      (JsPath \ "stars_mean").readWithDefault[Double](2.5)
   )(Dress.apply(_, _, _, _, _, _, _, _, _, _))
 }
 
