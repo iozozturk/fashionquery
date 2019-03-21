@@ -23,17 +23,16 @@ object Application extends App {
   val pipelineConfig = PipelineConfig(config, system)
   val indexConfig = IndexConfig(config, system)
 
-  private val indexService = new SearchService(indexConfig)
-  private val dressService = new DressService(indexService)
+  private val searchService = new SearchService(indexConfig)
 
-  private val dressControl = new DressPipeline(pipelineConfig, indexService).init()
-  private val ratingControl = new RatingPipeline(pipelineConfig, indexService).init()
-  private val eventualBinding = new Api(dressService).init()
+  private val dressControl = new DressPipeline(pipelineConfig, searchService).init()
+  private val ratingControl = new RatingPipeline(pipelineConfig, searchService).init()
+  private val eventualBinding = new Api(searchService).init()
 
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceUnbind, "service_shutdown") { () =>
     logger.info("shutting down gracefully, terminating connections")
     eventualBinding.flatMap(_.terminate(hardDeadline = 30.second)).flatMap { _ =>
-      indexService.esClient.close()
+      searchService.esClient.close()
       dressControl.drainAndShutdown()
       ratingControl.drainAndShutdown()
     }

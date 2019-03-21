@@ -8,10 +8,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
+import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Api(queryService: DressService)(
+class Api(searchService: SearchService)(
   implicit val system: ActorSystem,
   val materializer: Materializer,
   val executionContext: ExecutionContext
@@ -30,8 +31,11 @@ class Api(queryService: DressService)(
     path("search") {
       parameters('query, 'brand.?) { (query, brand) =>
         logger.info(s"new search for query=$query brand=$brand")
-        val queryHits = queryService.search(query, brand)
-        complete(OK, queryHits)
+        val queryHits = searchService.searchDress(query, brand)
+        val matchedDresses = queryHits.map { doc =>
+          Json.parse(doc).as[Dress]
+        }
+        complete(OK, matchedDresses)
       }
     }
   }
