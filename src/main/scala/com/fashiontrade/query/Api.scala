@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,7 +33,7 @@ class Api(searchService: SearchService)(
         logger.info(s"new search for query=$query brand=$brand")
         val queryHits = searchService.searchDress(query, brand)
         val matchedDresses = queryHits.map { doc =>
-          Json.parse(doc).as[Dress]
+          Json.parse(doc).as[JsObject]
         }
         complete(OK, matchedDresses)
       }

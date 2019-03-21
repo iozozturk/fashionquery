@@ -5,6 +5,8 @@ import org.mockito.Mockito.when
 import org.scalatest.Matchers
 import org.scalatest.WordSpec
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
 class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
 
@@ -73,7 +75,10 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      serviceInTest.searchDress("dressName", None) shouldEqual Seq(fixture.dressJson)
+      Json.parse(serviceInTest.searchDress("dressName", None).head).as[JsObject].toString() shouldEqual (Json
+        .parse(fixture.dressJson)
+        .as[JsObject] ++ Json.obj("score" -> 0))
+        .toString()
     }
 
     "search dress in brand name" in {
@@ -83,7 +88,10 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      serviceInTest.searchDress("brandName", None) shouldEqual Seq(fixture.dressJson)
+      Json.parse(serviceInTest.searchDress("brandName", None).head).as[JsObject].toString() shouldEqual (Json
+        .parse(fixture.dressJson)
+        .as[JsObject] ++ Json.obj("score" -> 0))
+        .toString()
     }
 
     "search non existing dress" in {

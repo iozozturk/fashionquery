@@ -3,12 +3,15 @@ package com.fashiontrade.query
 import java.net.InetAddress
 
 import org.elasticsearch.client.transport.TransportClient
+import org.elasticsearch.common.lucene.search.function.CombineFunction
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.index.query.functionscore.{FunctionScoreQueryBuilder, ScoreFunctionBuilders}
 import org.elasticsearch.transport.client.PreBuiltTransportClient
+import play.api.libs.json.{JsObject, Json}
 
 case class IndexResult(isSuccess: Boolean, docId: String)
 case class GetResult(exists: Boolean, document: String, docId: String)
@@ -52,13 +55,16 @@ class SearchService(indexConfig: IndexConfig) {
       queryBuilder.must(QueryBuilders.termQuery("brand.name.keyword", brand.get))
     }
 
+    val scoreFunction = ScoreFunctionBuilders
+      .fieldValueFactorFunction("stars_mean")
+
     val response = esClient
       .prepareSearch(indexName)
-      .setQuery(queryBuilder)
+      .setQuery(new FunctionScoreQueryBuilder(queryBuilder, scoreFunction).boostMode(CombineFunction.MULTIPLY))
       .get(SearchService.timeout)
 
     response.getHits.getHits.map { hit =>
-      hit.getSourceAsString
+      (Json.parse(hit.getSourceAsString).as[JsObject] ++ Json.obj("score" -> hit.getScore)).toString()
     }.toSeq
   }
 }
