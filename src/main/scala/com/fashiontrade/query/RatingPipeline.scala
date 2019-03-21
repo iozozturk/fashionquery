@@ -11,7 +11,7 @@ import akka.{Done, NotUsed}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.Json
 
-class RatingPipeline(config: PipelineConfig, indexService: SearchService)(
+class RatingPipeline(config: PipelineConfig, searchService: SearchService)(
   implicit val system: ActorSystem,
   materializer: Materializer
 ) {
@@ -36,32 +36,32 @@ class RatingPipeline(config: PipelineConfig, indexService: SearchService)(
   }
 
   private def logIndexResponse = Flow[IndexUpdateResult].map { result =>
-    logger.info(s"dress updated, success=${result.isSucess} id=${result.docId}")
+    logger.info(s"dress updated, success=${result.isSuccess} id=${result.docId}")
     result
   }
 
-  def updateDress: Flow[ConsumerRecord[String, String], IndexUpdateResult, NotUsed] =
+  private[query] def updateDress: Flow[ConsumerRecord[String, String], IndexUpdateResult, NotUsed] =
     Flow[ConsumerRecord[String, String]].map { record =>
       val jsonRecord = Json.parse(record.value())
       val dressId = (jsonRecord \ "payload" \ "dress_id").as[String]
       val stars = (jsonRecord \ "payload" \ "stars").as[Int]
 
-      val getResult = indexService.getDocument(dressId)
+      val getResult = searchService.getDocument(dressId)
 
       if (getResult.exists) {
         val dress = Json.parse(getResult.document).as[Dress]
         val updatedDress = updateDressRating(dress, stars)
 
-        val indexResult = indexService.index(Json.toJson(updatedDress).toString(), dressId)
+        val indexResult = searchService.index(Json.toJson(updatedDress).toString(), dressId)
         if (indexResult.isSuccess) {
-          IndexUpdateResult(isSucess = true, dressId)
+          IndexUpdateResult(isSuccess = true, dressId)
         } else {
           logger.warning(s"indexing failure, dressId=$dressId")
-          IndexUpdateResult(isSucess = false, dressId)
+          IndexUpdateResult(isSuccess = false, dressId)
         }
       } else {
         logger.warning(s"missing document in index, dressId=$dressId")
-        IndexUpdateResult(isSucess = false, dressId)
+        IndexUpdateResult(isSuccess = false, dressId)
       }
     }
 
@@ -74,4 +74,4 @@ class RatingPipeline(config: PipelineConfig, indexService: SearchService)(
 
 }
 
-case class IndexUpdateResult(isSucess: Boolean, docId: String)
+case class IndexUpdateResult(isSuccess: Boolean, docId: String)

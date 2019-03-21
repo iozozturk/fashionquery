@@ -20,7 +20,7 @@ class DressPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
     val pipelineConfig = mock[PipelineConfig]
     val pipelineInTest = new DressPipeline(pipelineConfig, searchService)
 
-    "extract id and payload to index" in {
+    "index dress payload" in {
       val id = "id"
       val payload =
         s"""
