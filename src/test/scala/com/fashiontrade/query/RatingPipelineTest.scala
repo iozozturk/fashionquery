@@ -35,7 +35,7 @@ class RatingPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
       val getResult = GetResult(exists = true, fixture.dressJson, dressId)
       val indexResult = IndexResult(isSuccess = true, dressId)
 
-      when(searchService.index(Json.parse(fixture.updatedDressWithStars).toString(), dressId)) thenReturn indexResult
+      when(searchService.update(Json.parse(fixture.updatedDressWithStars).toString(), dressId)) thenReturn indexResult
       when(searchService.getDocument(dressId)) thenReturn getResult
 
       val flowUnderTest = pipelineInTest.updateDress
@@ -95,7 +95,7 @@ class RatingPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
       when(searchService.getDocument(dressId)) thenReturn getResult
 
       val indexResult = IndexResult(isSuccess = false, dressId)
-      when(searchService.index(Json.parse(fixture.updatedDressWithStars).toString(), dressId)) thenReturn indexResult
+      when(searchService.update(Json.parse(fixture.updatedDressWithStars).toString(), dressId)) thenReturn indexResult
 
       val flowUnderTest = pipelineInTest.updateDress
 

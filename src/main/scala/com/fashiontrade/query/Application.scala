@@ -1,13 +1,8 @@
 package com.fashiontrade.query
-import java.net.InetAddress
-
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.Logging
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import com.typesafe.config.ConfigFactory
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.common.transport.TransportAddress
-import org.elasticsearch.transport.client.PreBuiltTransportClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationDouble
@@ -26,12 +21,9 @@ object Application extends App {
 
   val config = ConfigFactory.load
   val pipelineConfig = PipelineConfig(config, system)
+  val indexConfig = IndexConfig(config, system)
 
-  private val esHost = config.getString("elasticsearch.host")
-  val esClient = new PreBuiltTransportClient(Settings.EMPTY)
-    .addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), 9300))
-
-  private val indexService = new SearchService(esClient)
+  private val indexService = new SearchService(indexConfig)
   private val dressService = new DressService(indexService)
 
   private val dressControl = new DressPipeline(pipelineConfig, indexService).init()
@@ -41,7 +33,7 @@ object Application extends App {
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceUnbind, "service_shutdown") { () =>
     logger.info("shutting down gracefully, terminating connections")
     eventualBinding.flatMap(_.terminate(hardDeadline = 30.second)).flatMap { _ =>
-      esClient.close()
+      indexService.esClient.close()
       dressControl.drainAndShutdown()
       ratingControl.drainAndShutdown()
     }

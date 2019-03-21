@@ -22,3 +22,16 @@ object PipelineConfig {
       .withGroupId("pipeline")
       .withProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
 }
+
+case class IndexConfig(indexName: String, hostAdress: String)
+
+object IndexConfig {
+
+  def apply(config: Config, system: ActorSystem): IndexConfig =
+    new IndexConfig(esIndexName(config), esHostAddress(config))
+
+  private def esHostAddress(config: Config) = config.getString("elasticsearch.host")
+
+  private def esIndexName(config: Config) = config.getString("elasticsearch.index")
+
+}

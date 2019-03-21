@@ -52,7 +52,7 @@ class RatingPipeline(config: PipelineConfig, searchService: SearchService)(
         val dress = Json.parse(getResult.document).as[Dress]
         val updatedDress = updateDressRating(dress, stars)
 
-        val indexResult = searchService.index(Json.toJson(updatedDress).toString(), dressId)
+        val indexResult = searchService.update(Json.toJson(updatedDress).toString(), dressId)
         if (indexResult.isSuccess) {
           IndexUpdateResult(isSuccess = true, dressId)
         } else {
