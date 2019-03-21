@@ -8,7 +8,7 @@ class DressService(indexService: SearchService) {
 
   def search(query: String, brand: Option[String]): Seq[Dress] = {
 
-    val response = indexService.searchDress(query)
+    val response = indexService.searchDress(query, brand)
 
     response.map { doc =>
       Json.parse(doc).as[Dress]

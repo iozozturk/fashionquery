@@ -73,7 +73,7 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      serviceInTest.searchDress("dressName") shouldEqual Seq(fixture.dressJson)
+      serviceInTest.searchDress("dressName", None) shouldEqual Seq(fixture.dressJson)
     }
 
     "search dress in brand name" in {
@@ -83,40 +83,40 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      serviceInTest.searchDress("brandName") shouldEqual Seq(fixture.dressJson)
+      serviceInTest.searchDress("brandName", None) shouldEqual Seq(fixture.dressJson)
     }
 
     "search non existing dress" in {
-      serviceInTest.searchDress("some-non-existing-feature") shouldEqual Seq()
+      serviceInTest.searchDress("some-non-existing-feature", None) shouldEqual Seq()
     }
 
-    object fixture{
+    object fixture {
       val dressId = "AX821CA1M-Q11"
       val dressJson = s"""
-                        |{
-                        |  "id": "${dressId}",
-                        |  "images": [
-                        |    {
-                        |      "large_url": "http://i6.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg",
-                        |      "thumb_url": "http://i6.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg"
-                        |    },
-                        |    {
-                        |      "large_url": "http://i3.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg",
-                        |      "thumb_url": "http://i3.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg"
-                        |    }
-                        |  ],
-                        |  "activation_date": "2016-11-22T15:18:41+01:00",
-                        |  "name": "dressName",
-                        |  "color": "Black",
-                        |  "season": "WINTER",
-                        |  "price": 24.04,
-                        |  "brand": {
-                        |    "logo_url": "https://i3.ztat.net/brand/9b3cabce-c405-44d7-a62f-ee00d5245962.jpg",
-                        |    "name": "brandName"
-                        |  },
-                        |  "stars_count": 0,
-                        |  "stars_mean": 0
-                        |}
+                         |{
+                         |  "id": "${dressId}",
+                         |  "images": [
+                         |    {
+                         |      "large_url": "http://i6.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg",
+                         |      "thumb_url": "http://i6.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg"
+                         |    },
+                         |    {
+                         |      "large_url": "http://i3.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg",
+                         |      "thumb_url": "http://i3.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg"
+                         |    }
+                         |  ],
+                         |  "activation_date": "2016-11-22T15:18:41+01:00",
+                         |  "name": "dressName",
+                         |  "color": "Black",
+                         |  "season": "WINTER",
+                         |  "price": 24.04,
+                         |  "brand": {
+                         |    "logo_url": "https://i3.ztat.net/brand/9b3cabce-c405-44d7-a62f-ee00d5245962.jpg",
+                         |    "name": "brandName"
+                         |  },
+                         |  "stars_count": 0,
+                         |  "stars_mean": 0
+                         |}
                       """.stripMargin
     }
 

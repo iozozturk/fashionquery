@@ -13,9 +13,9 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient
 case class IndexResult(isSuccess: Boolean, docId: String)
 case class GetResult(exists: Boolean, document: String, docId: String)
 
-class SearchService (indexConfig: IndexConfig) {
+class SearchService(indexConfig: IndexConfig) {
   val esClient: TransportClient = new PreBuiltTransportClient(Settings.EMPTY)
-      .addTransportAddress(new TransportAddress(InetAddress.getByName(indexConfig.hostAdress), 9300))
+    .addTransportAddress(new TransportAddress(InetAddress.getByName(indexConfig.hostAdress), 9300))
   private val indexName = indexConfig.indexName
 
   def upsert(document: String, id: String): IndexResult = {
@@ -45,10 +45,16 @@ class SearchService (indexConfig: IndexConfig) {
     GetResult(response.isExists, response.getSourceAsString, id)
   }
 
-  def searchDress(query: String): Seq[String] = {
+  def searchDress(query: String, brand: Option[String]): Seq[String] = {
+    val queryBuilder =
+      QueryBuilders.boolQuery().should(QueryBuilders.multiMatchQuery(query, "name", "brand.name", "season", "color"))
+    if (brand.isDefined) {
+      queryBuilder.must(QueryBuilders.termQuery("brand.name.keyword", brand.get))
+    }
+
     val response = esClient
       .prepareSearch(indexName)
-      .setQuery(QueryBuilders.multiMatchQuery(query, "name", "brand.name", "season", "color"))
+      .setQuery(queryBuilder)
       .get(SearchService.timeout)
 
     response.getHits.getHits.map { hit =>
