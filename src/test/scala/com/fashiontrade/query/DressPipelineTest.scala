@@ -56,7 +56,7 @@ class DressPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
         """.stripMargin
 
       val indexResult = IndexResult(isSuccess = true, fixture.dressId)
-      when(searchService.upsert(Json.parse(fixture.dressJson).toString(), fixture.dressId)) thenReturn indexResult
+      when(searchService.upsert(Json.parse(fixture.dressWithDefaultStarsJson).toString(), fixture.dressId)) thenReturn indexResult
 
       val flowUnderTest = pipelineInTest.indexOrUpdate
 
@@ -74,6 +74,33 @@ class DressPipelineTest extends WordSpecLike with Matchers with MockitoSugar {
     object fixture {
       val dressId = "AX821CA1M-Q11"
       val dressJson = s"""
+                        |{
+                        |  "id": "$dressId",
+                        |  "images": [
+                        |    {
+                        |      "large_url": "http://i6.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg",
+                        |      "thumb_url": "http://i6.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@10.jpg"
+                        |    },
+                        |    {
+                        |      "large_url": "http://i3.ztat.net/large_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg",
+                        |      "thumb_url": "http://i3.ztat.net/catalog_hd/AX/82/1C/A1/MQ/11/AX821CA1M-Q11@9.jpg"
+                        |    }
+                        |  ],
+                        |  "activation_date": "2016-11-22T15:18:41+01:00",
+                        |  "name": "Jersey dress - black",
+                        |  "color": "Black",
+                        |  "season": "WINTER",
+                        |  "price": 24.04,
+                        |  "brand": {
+                        |    "logo_url": "https://i3.ztat.net/brand/9b3cabce-c405-44d7-a62f-ee00d5245962.jpg",
+                        |    "name": "Anna Field Curvy"
+                        |  },
+                        |  "stars_count": 2,
+                        |  "stars_mean": 5.0
+                        |}
+                      """.stripMargin
+
+      val dressWithDefaultStarsJson = s"""
                         |{
                         |  "id": "$dressId",
                         |  "images": [
