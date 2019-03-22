@@ -9,9 +9,11 @@ import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.index.query.QueryBuilders
-import org.elasticsearch.index.query.functionscore.{FunctionScoreQueryBuilder, ScoreFunctionBuilders}
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders
 import org.elasticsearch.transport.client.PreBuiltTransportClient
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
 case class IndexResult(isSuccess: Boolean, docId: String)
 case class GetResult(exists: Boolean, document: String, docId: String)
@@ -48,9 +50,11 @@ class SearchService(indexConfig: IndexConfig) {
     GetResult(response.isExists, response.getSourceAsString, id)
   }
 
-  def searchDress(query: String, brand: Option[String]): Seq[String] = {
-    val queryBuilder =
-      QueryBuilders.boolQuery().should(QueryBuilders.multiMatchQuery(query, "name", "brand.name", "season", "color"))
+  def searchDress(query: Option[String], brand: Option[String]): Seq[String] = {
+    val queryBuilder = QueryBuilders.boolQuery()
+    if (query.isDefined) {
+      queryBuilder.should(QueryBuilders.multiMatchQuery(query.get, "name", "brand.name", "season", "color"))
+    }
     if (brand.isDefined) {
       queryBuilder.must(QueryBuilders.termQuery("brand.name.keyword", brand.get))
     }

@@ -29,7 +29,7 @@ class Api(searchService: SearchService)(
 
   private val route = get {
     path("search") {
-      parameters('query, 'brand.?) { (query, brand) =>
+      parameters('query.?, 'brand.?) { (query, brand) =>
         logger.info(s"new search for query=$query brand=$brand")
         val queryHits = searchService.searchDress(query, brand)
         val matchedDresses = queryHits.map { doc =>

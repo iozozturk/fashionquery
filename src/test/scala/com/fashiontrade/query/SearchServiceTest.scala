@@ -75,7 +75,7 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      Json.parse(serviceInTest.searchDress("dressName", None).head).as[JsObject].toString() shouldEqual (Json
+      Json.parse(serviceInTest.searchDress(Some("dressName"), None).head).as[JsObject].toString() shouldEqual (Json
         .parse(fixture.dressJson)
         .as[JsObject] ++ Json.obj("score" -> 0))
         .toString()
@@ -88,14 +88,27 @@ class SearchServiceTest extends WordSpec with Matchers with MockitoSugar {
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .get()
 
-      Json.parse(serviceInTest.searchDress("brandName", None).head).as[JsObject].toString() shouldEqual (Json
+      Json.parse(serviceInTest.searchDress(Some("brandName"), None).head).as[JsObject].toString() shouldEqual (Json
         .parse(fixture.dressJson)
         .as[JsObject] ++ Json.obj("score" -> 0))
         .toString()
     }
 
     "search non existing dress" in {
-      serviceInTest.searchDress("some-non-existing-feature", None) shouldEqual Seq()
+      serviceInTest.searchDress(Some("some-non-existing-feature"), None) shouldEqual Seq()
+    }
+
+    "filter dress with brand name" in {
+      esClient
+        .prepareIndex(indexName, "_doc", fixture.dressId)
+        .setSource(fixture.dressJson, XContentType.JSON)
+        .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
+        .get()
+
+      Json.parse(serviceInTest.searchDress(None, Some("brandName")).head).as[JsObject].toString() shouldEqual (Json
+        .parse(fixture.dressJson)
+        .as[JsObject] ++ Json.obj("score" -> 0))
+        .toString()
     }
 
     object fixture {
