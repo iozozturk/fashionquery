@@ -12,11 +12,15 @@ FashionQuery is a query backend that consumes dress data from Kafka, index them 
 ## Running Backend Service
 
 To bootstrap backend run below command on project root. Service will bind to 8080 port for incoming queries.
-> sbt run
+ ```
+$ sbt run
+```
 
 ## Testing Backend Service
 
-> sbt test
+```
+$ sbt test
+``` 
 
 Integration tests require running Elasticsearch.
 
